@@ -6,9 +6,11 @@
     <title>Le Bon Son - 프랑스어 발음 연습</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; color: #333; }
-        .container { width: 90%; max-width: 500px; background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; }
+        .container { width: 90%; max-width: 600px; background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; }
         h1 { color: #4a69bd; margin-bottom: 10px; }
-        #category-selector { margin-bottom: 20px; width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ddd; }
+        .selectors { display: flex; gap: 10px; margin-bottom: 20px; }
+        .selectors select { flex-grow: 1; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ddd; }
+        #sub-category-selector { display: none; } /* Initially hidden */
         #practiceCard { padding: 20px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 20px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
         #frenchText { font-size: 2em; font-weight: bold; color: #1e3799; margin-bottom: 10px; }
         #koreanText { font-size: 1em; color: #777; margin-bottom: 20px; }
@@ -28,7 +30,10 @@
 <div class="container">
     <h1>Le Bon Son 🇫🇷</h1>
     
-    <select id="category-selector"></select>
+    <div class="selectors">
+      <select id="category-selector"></select>
+      <select id="sub-category-selector"></select>
+    </div>
 
     <div id="practiceCard">
         <h2 id="frenchText"></h2>
@@ -50,18 +55,17 @@
     const frenchTextElem = document.getElementById('frenchText');
     const koreanTextElem = document.getElementById('koreanText');
     const categorySelector = document.getElementById('category-selector');
+    const subCategorySelector = document.getElementById('sub-category-selector');
     const listenBtn = document.getElementById('listenBtn');
     const speakBtn = document.getElementById('speakBtn');
     const nextBtn = document.getElementById('nextBtn');
     const resultArea = document.getElementById('resultArea');
     const userSaidElem = document.getElementById('userSaid');
 
-    // --- 전역 변수 ---
-    let allData = {}; // 불러온 JSON 데이터 전체를 저장할 객체
-    let currentPracticeSet = []; // 현재 선택된 카테고리의 문제 배열
+    let allData = {};
+    let currentPracticeSet = [];
     let currentIndex = 0;
 
-    // --- 웹 스피치 API 설정 ---
     const synth = window.speechSynthesis;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -71,47 +75,86 @@
     // --- 데이터 로딩 및 초기화 ---
     window.addEventListener('DOMContentLoaded', async () => {
         try {
-            const response = await fetch('data.json'); // JSON 파일 불러오기
+            const response = await fetch('data.json');
             allData = await response.json();
             populateCategories();
-            loadCategory(); // 첫 번째 카테고리 로드
+            loadCategory(); 
         } catch (error) {
             console.error('데이터를 불러오는 데 실패했습니다:', error);
             frenchTextElem.textContent = "데이터 로딩 실패";
         }
     });
 
-    // --- 카테고리 드롭다운 채우기 ---
     function populateCategories() {
         const categoryNames = Object.keys(allData);
         categorySelector.innerHTML = categoryNames.map(name => `<option value="${name}">${name}</option>`).join('');
     }
 
-    // --- 카테고리 변경 시 문제 세트 업데이트 ---
-    function loadCategory() {
-        const selectedCategory = categorySelector.value;
-        currentPracticeSet = allData[selectedCategory];
-        currentIndex = 0; // 인덱스 초기화
-        loadNextProblem();
-        resultArea.firstChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
-        userSaidElem.textContent = "";
-        userSaidElem.className = "";
+    function populateSubCategories(subCategoryData) {
+        const subCategoryNames = Object.keys(subCategoryData);
+        subCategorySelector.innerHTML = subCategoryNames.map(name => `<option value="${name}">${name}</option>`).join('');
+        subCategorySelector.style.display = 'block';
     }
 
-    // --- 문제 로딩 함수 ---
+    function loadCategory() {
+        const selectedCategoryName = categorySelector.value;
+        const selectedCategoryData = allData[selectedCategoryName];
+
+        // 데이터 구조가 배열인지 객체(하위 카테고리가 있는지) 확인
+        if (Array.isArray(selectedCategoryData)) {
+            subCategorySelector.style.display = 'none'; // 하위 카테고리 숨김
+            currentPracticeSet = selectedCategoryData;
+            currentIndex = -1;
+            loadNextProblem();
+        } else {
+            populateSubCategories(selectedCategoryData);
+            loadSubCategory(); // 첫 하위 카테고리 자동 로드
+        }
+        resetResult();
+    }
+
+    function loadSubCategory() {
+        const selectedCategoryName = categorySelector.value;
+        const selectedSubCategoryName = subCategorySelector.value;
+        currentPracticeSet = allData[selectedCategoryName][selectedSubCategoryName];
+        currentIndex = -1;
+        loadNextProblem();
+        resetResult();
+    }
+
     function loadNextProblem() {
-        if (!currentPracticeSet || currentPracticeSet.length === 0) return;
+        if (!currentPracticeSet || currentPracticeSet.length === 0) {
+            frenchTextElem.textContent = "문제가 없습니다.";
+            koreanTextElem.textContent = "다른 카테고리를 선택해주세요.";
+            return;
+        };
         
-        // 카테고리 내에서 순환 또는 랜덤 선택 (여기선 순환)
         currentIndex = (currentIndex + 1) % currentPracticeSet.length;
         const problem = currentPracticeSet[currentIndex];
 
         frenchTextElem.textContent = problem.fr;
         koreanTextElem.textContent = problem.ko;
+        resetResult();
     }
     
+    function resetResult() {
+        resultArea.firstChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
+        userSaidElem.textContent = "";
+        userSaidElem.className = "";
+    }
+
     // --- 이벤트 리스너 ---
     categorySelector.addEventListener('change', loadCategory);
+    subCategorySelector.addEventListener('change', loadSubCategory);
+    listenBtn.addEventListener('click', () => { /* ... (이하 동일) ... */ });
+    speakBtn.addEventListener('click', () => { /* ... (이하 동일) ... */ });
+    nextBtn.addEventListener('click', loadNextProblem);
+    recognition.onresult = (event) => { /* ... (이하 동일) ... */ };
+    recognition.onend = () => { /* ... (이하 동일) ... */ };
+    recognition.onerror = (event) => { /* ... (이하 동일) ... */ };
+
+
+    // --- (변동 없는 나머지 JS 코드) ---
     listenBtn.addEventListener('click', () => {
         const textToSpeak = frenchTextElem.textContent;
         if (!textToSpeak || synth.speaking) return;
@@ -120,30 +163,18 @@
         utterThis.rate = 0.8;
         synth.speak(utterThis);
     });
-
     speakBtn.addEventListener('click', () => {
-        if (!frenchTextElem.textContent) return;
+        if (!frenchTextElem.textContent || speakBtn.disabled) return;
         speakBtn.classList.add('recording');
         speakBtn.textContent = "🎙️ 듣는 중...";
         speakBtn.disabled = true;
         recognition.start();
     });
-
-    nextBtn.addEventListener('click', () => {
-        loadNextProblem();
-        resultArea.firstChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
-        userSaidElem.textContent = "";
-        userSaidElem.className = "";
-    });
-
-    // --- 음성 인식 결과 처리 ---
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         userSaidElem.textContent = `🗣️ "${transcript}"`;
-
         const originalText = frenchTextElem.textContent.toLowerCase().replace(/[?.,!]/g, '').trim();
         const recognizedText = transcript.toLowerCase().replace(/[?.,!]/g, '').trim();
-
         if (originalText === recognizedText) {
             userSaidElem.className = 'correct';
             resultArea.firstChild.textContent = "🎉 정확해요!";
@@ -152,18 +183,15 @@
             resultArea.firstChild.textContent = "🤔 다시 시도해보세요!";
         }
     };
-
     recognition.onend = () => {
         speakBtn.classList.remove('recording');
         speakBtn.textContent = "🎤 말하기";
         speakBtn.disabled = false;
     };
-
     recognition.onerror = (event) => {
         resultArea.firstChild.textContent = "에러: " + event.error;
         recognition.onend();
     };
-
 </script>
 
 </body>
