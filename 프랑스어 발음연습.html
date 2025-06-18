@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Bon Son - 프랑스어 발음 연습</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #34568B; /* Sophisticated Blue */
+            --secondary-color: #f1c40f; /* Accent Gold */
+            --background-color: #f7f9fc;
+            --card-background: #ffffff;
+            --text-color: #34495e;
+            --heading-color: #2c3e50;
+            --light-gray: #ecf0f1;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --speak-color: #e67e22;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--card-background);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--heading-color);
+            margin-bottom: 25px;
+            letter-spacing: -1px;
+        }
+        h1 span {
+            color: var(--primary-color);
+        }
+
+        .selectors {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .selectors select {
+            flex-grow: 1;
+            padding: 12px 15px;
+            font-size: 1em;
+            font-family: 'Nunito Sans', sans-serif;
+            border-radius: 10px;
+            border: 2px solid var(--light-gray);
+            background-color: #fff;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2334568B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 15px top 50%;
+            background-size: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .selectors select:hover {
+            border-color: var(--primary-color);
+        }
+        .selectors select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 86, 139, 0.2);
+        }
+
+        #sub-category-selector { display: none; }
+
+        #practiceCard {
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            background-color: var(--background-color);
+            border: 1px solid var(--light-gray);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #frenchText {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.8em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        #koreanText {
+            font-size: 1.2em;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 18px 25px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        button:active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #listenBtn { background-color: var(--primary-color); }
+        #speakBtn { background-color: var(--speak-color); }
+        #nextBtn {
+            grid-column: 1 / -1; /* Span across both columns */
+            background-color: var(--success-color);
+        }
+
+        #speakBtn.recording {
+            background-color: var(--error-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(192, 57, 43, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
+        }
+
+        #resultArea {
+            min-height: 60px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            background-color: var(--light-gray);
+            transition: all 0.3s ease;
+        }
+
+        #resultArea p {
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+
+        #userSaid {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+        
+        .correct { color: var(--success-color); }
+        .incorrect { color: var(--error-color); }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 { font-size: 2em; }
+            #frenchText { font-size: 2.2em; }
+            .container { padding: 25px; }
+            .buttons { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Le Bon Son <span>🇫🇷</span></h1>
+    
+    <div class="selectors">
+      <select id="category-selector"></select>
+      <select id="sub-category-selector"></select>
+    </div>
+
+    <div id="practiceCard">
+        <h2 id="frenchText">Bonjour</h2>
+        <p id="koreanText">(안녕하세요)</p>
+    </div>
+
+    <div class="buttons">
+        <button id="listenBtn">🔊 듣기</button>
+        <button id="speakBtn">🎤 말하기</button>
+        <button id="nextBtn">다음 문제 →</button>
+    </div>
+
+    <div id="resultArea">
+        <p>카테고리를 선택하고 말하기 버튼을 누르세요!</p>
+        <p id="userSaid"></p>
+    </div>
+</div>
+
+<script>
+    // --- HTML 요소 가져오기 ---
+    const frenchTextElem = document.getElementById('frenchText');
+    const koreanTextElem = document.getElementById('koreanText');
+    const categorySelector = document.getElementById('category-selector');
+    const subCategorySelector = document.getElementById('sub-category-selector');
+    const listenBtn = document.getElementById('listenBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const resultArea = document.getElementById('resultArea');
+    const userSaidElem = document.getElementById('userSaid');
+
+    // --- 전역 변수 ---
+    let allData = {}; 
+    let currentPracticeSet = [];
+    let currentIndex = -1; // -1로 시작하여 첫 next에서 0이 되도록 함
+
+    // --- 웹 스피치 API 설정 ---
+    const synth = window.speechSynthesis;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    // Check if SpeechRecognition is supported
+    if (!SpeechRecognition) {
+        alert("죄송하지만, 사용하시는 브라우저는 음성 인식을 지원하지 않습니다. Chrome 브라우저를 사용해주세요.");
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+
+    // --- 데이터 로딩 및 초기화 ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('data.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            allData = await response.json();
+            populateCategories();
+            loadCategory(); 
+        } catch (error) {
+            console.error('데이터를 불러오는 데 실패했습니다:', error);
+            frenchTextElem.textContent = "데이터 로딩 실패";
+            koreanTextElem.textContent = "data.json 파일을 확인해주세요.";
+        }
+    });
+
+    // --- 카테고리/하위카테고리 관련 함수 ---
+    function populateCategories() {
+        const categoryNames = Object.keys(allData);
+        categorySelector.innerHTML = categoryNames.map(name => `<option value="${name}">${name}</option>`).join('');
+    }
+
+    function populateSubCategories(subCategoryData) {
+        const subCategoryNames = Object.keys(subCategoryData);
+        subCategorySelector.innerHTML = subCategoryNames.map(name => `<option value="${name}">${name}</option>`).join('');
+        subCategorySelector.style.display = 'block';
+    }
+
+    function loadCategory() {
+        const selectedCategoryName = categorySelector.value;
+        const selectedCategoryData = allData[selectedCategoryName];
+
+        if (Array.isArray(selectedCategoryData)) {
+            subCategorySelector.style.display = 'none';
+            currentPracticeSet = selectedCategoryData;
+            currentIndex = -1;
+            loadNextProblem();
+        } else {
+            populateSubCategories(selectedCategoryData);
+            loadSubCategory();
+        }
+        resetResult();
+    }
+
+    function loadSubCategory() {
+        const selectedCategoryName = categorySelector.value;
+        const selectedSubCategoryName = subCategorySelector.value;
+        currentPracticeSet = allData[selectedCategoryName][selectedSubCategoryName];
+        currentIndex = -1;
+        loadNextProblem();
+        resetResult();
+    }
+
+    // --- 문제 로딩 및 결과 리셋 함수 ---
+    function loadNextProblem() {
+        if (!currentPracticeSet || currentPracticeSet.length === 0) {
+            frenchTextElem.textContent = "연습 문제";
+            koreanTextElem.textContent = "카테고리를 선택해주세요.";
+            return;
+        };
+        
+        // Ensure index wraps around correctly
+        currentIndex = (currentIndex + 1) % currentPracticeSet.length;
+        const problem = currentPracticeSet[currentIndex];
+
+        frenchTextElem.textContent = problem.fr;
+        koreanTextElem.textContent = problem.ko;
+        resetResult();
+    }
+    
+    function resetResult() {
+        resultArea.firstElementChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
+        userSaidElem.textContent = "";
+        userSaidElem.className = "";
+    }
+
+    // --- 이벤트 리스너 ---
+    categorySelector.addEventListener('change', loadCategory);
+    subCategorySelector.addEventListener('change', loadSubCategory);
+    nextBtn.addEventListener('click', loadNextProblem);
+
+    listenBtn.addEventListener('click', () => {
+        const textToSpeak = frenchTextElem.textContent;
+        if (!textToSpeak || synth.speaking) return;
+        const utterThis = new SpeechSynthesisUtterance(textToSpeak);
+        utterThis.lang = 'fr-FR';
+        utterThis.rate = 0.85; // Slightly faster for natural flow
+        utterThis.pitch = 1;
+        synth.speak(utterThis);
+    });
+
+    speakBtn.addEventListener('click', () => {
+        if (!frenchTextElem.textContent || speakBtn.disabled) return;
+        speakBtn.classList.add('recording');
+        speakBtn.textContent = "🎙️ 듣는 중...";
+        speakBtn.disabled = true;
+        recognition.start();
+    });
+
+    // --- 음성 인식 결과 처리 ---
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userSaidElem.textContent = `🗣️ "${transcript}"`;
+
+        const originalText = frenchTextElem.textContent.toLowerCase().replace(/[?.,!]/g, '').trim();
+        const recognizedText = transcript.toLowerCase().replace(/[?.,!]/g, '').trim();
+
+        if (originalText === recognizedText) {
+            userSaidElem.className = 'correct';
+            resultArea.firstElementChild.textContent = "🎉 정확해요! 훌륭합니다!";
+        } else {
+            userSaidElem.className = 'incorrect';
+            resultArea.firstElementChild.textContent = "🤔 아쉬워요! 다시 시도해보세요.";
+        }
+    };
+
+    recognition.onend = () => {
+        speakBtn.classList.remove('recording');
+        speakBtn.textContent = "🎤 말하기";
+        speakBtn.disabled = false;
+    };
+
+    recognition.onerror = (event) => {
+        if (event.error == 'no-speech') {
+            resultArea.firstElementChild.textContent = "음성을 인식하지 못했어요. 다시 시도해주세요.";
+        } else {
+            resultArea.firstElementChild.textContent = "에러: " + event.error;
+        }
+        recognition.onend(); // Ensure button state is restored
+    };
+</script>
+
+</body>
+</html>
