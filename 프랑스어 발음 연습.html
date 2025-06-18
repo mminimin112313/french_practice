@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Bon Son - 프랑스어 발음 연습</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; color: #333; }
+        .container { width: 90%; max-width: 500px; background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #4a69bd; margin-bottom: 10px; }
+        #category-selector { margin-bottom: 20px; width: 100%; padding: 10px; font-size: 1em; border-radius: 8px; border: 1px solid #ddd; }
+        #practiceCard { padding: 20px; border: 1px solid #ddd; border-radius: 10px; margin-bottom: 20px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; }
+        #frenchText { font-size: 2em; font-weight: bold; color: #1e3799; margin-bottom: 10px; }
+        #koreanText { font-size: 1em; color: #777; margin-bottom: 20px; }
+        .buttons { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        button { padding: 15px 25px; font-size: 1.2em; cursor: pointer; border: none; border-radius: 8px; color: white; transition: background-color 0.3s; }
+        #listenBtn { background-color: #4a69bd; } #listenBtn:hover { background-color: #3a539b; }
+        #speakBtn { background-color: #e67e22; } #speakBtn.recording { background-color: #c0392b; animation: pulse 1.5s infinite; }
+        #nextBtn { background-color: #27ae60; } #nextBtn:hover { background-color: #229954; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); } 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); } }
+        #resultArea { min-height: 50px; padding: 15px; border-radius: 8px; background-color: #f9f9f9; }
+        #userSaid { font-size: 1.2em; font-weight: 500; }
+        .correct { color: #27ae60; } .incorrect { color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Le Bon Son 🇫🇷</h1>
+    
+    <select id="category-selector"></select>
+
+    <div id="practiceCard">
+        <h2 id="frenchText"></h2>
+        <p id="koreanText"></p>
+    </div>
+    <div class="buttons">
+        <button id="listenBtn">🔊 듣기</button>
+        <button id="speakBtn">🎤 말하기</button>
+    </div>
+    <div id="resultArea">
+        <p>카테고리를 선택하고 연습을 시작하세요!</p>
+        <p id="userSaid"></p>
+    </div>
+     <button id="nextBtn">다음 문제 →</button>
+</div>
+
+<script>
+    // --- HTML 요소 가져오기 ---
+    const frenchTextElem = document.getElementById('frenchText');
+    const koreanTextElem = document.getElementById('koreanText');
+    const categorySelector = document.getElementById('category-selector');
+    const listenBtn = document.getElementById('listenBtn');
+    const speakBtn = document.getElementById('speakBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const resultArea = document.getElementById('resultArea');
+    const userSaidElem = document.getElementById('userSaid');
+
+    // --- 전역 변수 ---
+    let allData = {}; // 불러온 JSON 데이터 전체를 저장할 객체
+    let currentPracticeSet = []; // 현재 선택된 카테고리의 문제 배열
+    let currentIndex = 0;
+
+    // --- 웹 스피치 API 설정 ---
+    const synth = window.speechSynthesis;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.interimResults = false;
+
+    // --- 데이터 로딩 및 초기화 ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('data.json'); // JSON 파일 불러오기
+            allData = await response.json();
+            populateCategories();
+            loadCategory(); // 첫 번째 카테고리 로드
+        } catch (error) {
+            console.error('데이터를 불러오는 데 실패했습니다:', error);
+            frenchTextElem.textContent = "데이터 로딩 실패";
+        }
+    });
+
+    // --- 카테고리 드롭다운 채우기 ---
+    function populateCategories() {
+        const categoryNames = Object.keys(allData);
+        categorySelector.innerHTML = categoryNames.map(name => `<option value="${name}">${name}</option>`).join('');
+    }
+
+    // --- 카테고리 변경 시 문제 세트 업데이트 ---
+    function loadCategory() {
+        const selectedCategory = categorySelector.value;
+        currentPracticeSet = allData[selectedCategory];
+        currentIndex = 0; // 인덱스 초기화
+        loadNextProblem();
+        resultArea.firstChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
+        userSaidElem.textContent = "";
+        userSaidElem.className = "";
+    }
+
+    // --- 문제 로딩 함수 ---
+    function loadNextProblem() {
+        if (!currentPracticeSet || currentPracticeSet.length === 0) return;
+        
+        // 카테고리 내에서 순환 또는 랜덤 선택 (여기선 순환)
+        currentIndex = (currentIndex + 1) % currentPracticeSet.length;
+        const problem = currentPracticeSet[currentIndex];
+
+        frenchTextElem.textContent = problem.fr;
+        koreanTextElem.textContent = problem.ko;
+    }
+    
+    // --- 이벤트 리스너 ---
+    categorySelector.addEventListener('change', loadCategory);
+    listenBtn.addEventListener('click', () => {
+        const textToSpeak = frenchTextElem.textContent;
+        if (!textToSpeak || synth.speaking) return;
+        const utterThis = new SpeechSynthesisUtterance(textToSpeak);
+        utterThis.lang = 'fr-FR';
+        utterThis.rate = 0.8;
+        synth.speak(utterThis);
+    });
+
+    speakBtn.addEventListener('click', () => {
+        if (!frenchTextElem.textContent) return;
+        speakBtn.classList.add('recording');
+        speakBtn.textContent = "🎙️ 듣는 중...";
+        speakBtn.disabled = true;
+        recognition.start();
+    });
+
+    nextBtn.addEventListener('click', () => {
+        loadNextProblem();
+        resultArea.firstChild.textContent = "마이크 버튼을 누르고 따라 말해보세요.";
+        userSaidElem.textContent = "";
+        userSaidElem.className = "";
+    });
+
+    // --- 음성 인식 결과 처리 ---
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        userSaidElem.textContent = `🗣️ "${transcript}"`;
+
+        const originalText = frenchTextElem.textContent.toLowerCase().replace(/[?.,!]/g, '').trim();
+        const recognizedText = transcript.toLowerCase().replace(/[?.,!]/g, '').trim();
+
+        if (originalText === recognizedText) {
+            userSaidElem.className = 'correct';
+            resultArea.firstChild.textContent = "🎉 정확해요!";
+        } else {
+            userSaidElem.className = 'incorrect';
+            resultArea.firstChild.textContent = "🤔 다시 시도해보세요!";
+        }
+    };
+
+    recognition.onend = () => {
+        speakBtn.classList.remove('recording');
+        speakBtn.textContent = "🎤 말하기";
+        speakBtn.disabled = false;
+    };
+
+    recognition.onerror = (event) => {
+        resultArea.firstChild.textContent = "에러: " + event.error;
+        recognition.onend();
+    };
+
+</script>
+
+</body>
+</html>
