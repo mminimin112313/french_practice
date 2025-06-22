@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orateur v3.2 - Stable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a69bd; --secondary-color: #6a89cc; --success-color: #38ada9;
+            --danger-color: #e55039; --background-color: #f8f9fa; --surface-color: #ffffff;
+            --text-color: #343a40; --text-light-color: #868e96; --border-color: #dee2e6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, .05);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-color);
+            overflow: hidden; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+        }
+        .app-container { display: flex; height: 100vh; }
+        .sidebar {
+            width: 280px; background-color: var(--surface-color); border-right: 1px solid var(--border-color);
+            padding: 1rem; transition: transform .3s ease-in-out; flex-shrink: 0;
+            display: flex; flex-direction: column; gap: 1.5rem;
+        }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .app-header {
+            padding: 1rem 1.5rem; background-color: var(--surface-color); border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .view { height: 100%; overflow-y: auto; }
+        .practice-area { padding: 2rem; display: grid; place-items: center; text-align: center; }
+        .practice-wrapper { display: flex; flex-direction: column; gap: 2rem; align-items: center; width: 100%; max-width: 600px; }
+        #current-phrase { font-size: 2.5rem; font-weight: 500; line-height: 1.4; }
+        .controls { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .btn {
+            padding: .8rem 1.5rem; border: none; background-color: var(--primary-color); color: white;
+            border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 500;
+            transition: all .2s ease; box-shadow: var(--shadow);
+        }
+        .btn:disabled { background-color: #adb5bd; cursor: not-allowed; box-shadow: none; }
+        .btn:hover:not(:disabled) { transform: translateY(-2px); background-color: var(--secondary-color); }
+        .btn:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+        .btn-modal-item { background-color: #f1f3f5; color: var(--text-color); width: 100%; text-align: left; box-shadow: none; }
+        .btn-modal-item:hover:not(:disabled) { background-color: #e9ecef; color: var(--text-color); transform: none; }
+        .is-hidden { display: none !important; }
+        #history-list, #record-board-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+        .history-item, .record-item {
+            cursor: pointer; padding: .75rem 1rem; border-radius: 8px;
+            border: 1px solid var(--border-color); transition: all .2s ease;
+        }
+        .history-item:hover, .record-item:hover { border-color: var(--primary-color); box-shadow: var(--shadow); transform: translateY(-2px); }
+        .record-board-area-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border-color); }
+        #record-board-area { padding: 2rem 2.5rem; }
+        .record-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--surface-color); }
+        .record-info { display: flex; flex-direction: column; gap: .25rem; }
+        .record-info .phrase { font-weight: 500; }
+        .record-info .timestamp { font-size: .8rem; color: var(--text-light-color); }
+        .record-item-controls { display: flex; gap: .5rem; }
+        .icon-btn {
+            font-size: 1.5rem; background: 0 0; border: none; color: var(--text-light-color);
+            cursor: pointer; width: 40px; height: 40px; border-radius: 50%;
+            display: grid; place-items: center; transition: all .2s ease;
+        }
+        .icon-btn:hover { background-color: #e9ecef; color: var(--primary-color); }
+        .phrase-nav { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 1rem; }
+        .nav-btn { background-color: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: none; }
+        .hamburger-menu { display: none; font-size: 1.5rem; cursor: pointer; padding: .5rem; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem }
+        .modal-title { font-size: 1.5rem; font-weight: 700; flex-grow: 1; }
+        .modal-back-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-light-color); font-weight: bold; padding: .5rem; }
+        .modal-close-btn { border: none; background: 0 0; font-size: 1.8rem; cursor: pointer; color: var(--text-light-color); }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed; top: 0; left: 0; height: 100%; z-index: 1000;
+                transform: translateX(-100%); box-shadow: 2px 0 15px rgba(0, 0, 0, .1);
+            }
+            .sidebar.is-active { transform: translateX(0); }
+            .hamburger-menu { display: block; }
+            #current-phrase { font-size: 1.8rem; }
+            .app-header { padding: .75rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div><h3>학습 메뉴</h3><button class="btn" id="show-practice-view-btn" style="width:100%;margin-top:.5rem">연습하기</button><button class="btn" id="show-record-board-btn" style="width:100%;margin-top:.5rem">녹음 기록판</button></div>
+            <div><h3>최근 학습</h3><ul id="history-list"></ul></div>
+        </aside>
+        <div class="main-content">
+            <header class="app-header"><div class="hamburger-menu" id="hamburger">☰</div><h1 class="app-title" style="font-weight:700">Orateur</h1><button class="btn" id="open-modal-btn">레슨 선택...</button></header>
+            <div class="view" id="practice-area"><div class="practice-wrapper"><h2 id="current-phrase">레슨을 선택해주세요.</h2><div class="controls"><button class="btn" id="tts-btn">Écouter</button><button class="btn" id="record-btn">Enregistrer</button><button class="btn is-hidden" id="playback-btn">내 녹음 듣기</button></div><p id="status-display">상태: 대기 중</p><div class="phrase-nav is-hidden" id="phrase-nav-container"><button class="btn nav-btn" id="prev-phrase-btn">&lt; 이전</button><span id="phrase-counter"></span><button class="btn nav-btn" id="next-phrase-btn">다음 &gt;</button></div></div></div>
+            <div class="view is-hidden" id="record-board-area"><h2 class="record-board-area-title">나의 녹음 기록</h2><ul id="record-board-list"></ul></div>
+        </div>
+        <div class="modal-overlay is-hidden" id="lesson-modal"><div class="modal-content" style="background-color:var(--surface-color);padding:1.5rem;border-radius:12px;width:90%;max-width:500px;display:flex;flex-direction:column;gap:1rem; box-shadow:0 10px 25px rgba(0,0,0,.1);"><div class="modal-header" id="modal-header"><button class="modal-back-btn is-hidden" id="modal-back-btn">&lt; 뒤로</button><h3 class="modal-title" id="modal-title">카테고리 선택</h3><button class="modal-close-btn" id="modal-close-btn">&times;</button></div><div id="modal-body"></div></div></div>
+    </div>
+    <script>
+        const LESSON_DATA = [
+            { category: "Salutations (인사)", lessons: [{ title: "Leçon 1: Salutations de base", phrases: ["Bonjour.", "Bonsoir.", "Salut.", "Comment ça va ?", "Ça va bien, merci.", "Et vous ?", "Je m'appelle Gemini.", "Enchanté de faire votre connaissance."] }, { title: "Leçon 2: Formules de politesse", phrases: ["S'il vous plaît.", "Merci beaucoup.", "De rien.", "Excusez-moi."] }] },
+            { category: "Au restaurant (식당에서)", lessons: [{ title: "Leçon 1: Commander", phrases: ["L'addition, s'il vous plaît.", "Je voudrais un café.", "C'est délicieux."] }] }
+        ];
+
+        class IndexedDBManager {
+            constructor(dbName, storeName) { this.dbName = dbName; this.storeName = storeName; this.db = null; }
+            async init() { return new Promise((resolve, reject) => { const request = indexedDB.open(this.dbName, 1); request.onerror = () => reject("IndexedDB failed to open."); request.onsuccess = (event) => { this.db = event.target.result; resolve(); }; request.onupgradeneeded = (event) => { const db = event.target.result; if (!db.objectStoreNames.contains(this.storeName)) { db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true }); } }; }); }
+            async addRecording(record) { return new Promise((resolve, reject) => { const transaction = this.db.transaction([this.storeName], 'readwrite'); const store = transaction.objectStore(this.storeName); const request = store.add(record); request.onsuccess = resolve; request.onerror = () => reject("Failed to save recording."); }); }
+            async getAllRecordings() { return new Promise((resolve, reject) => { const transaction = this.db.transaction([this.storeName], 'readonly'); const store = transaction.objectStore(this.storeName); const request = store.getAll(); request.onsuccess = () => resolve(request.result.reverse()); request.onerror = () => reject("Failed to load recordings."); }); }
+            async getRecording(id) { return new Promise((resolve, reject) => { const transaction = this.db.transaction([this.storeName], 'readonly'); const store = transaction.objectStore(this.storeName); const request = store.get(id); request.onsuccess = () => resolve(request.result); request.onerror = () => reject("Failed to get recording."); }); }
+        }
+
+        class App {
+            constructor() {
+                this.dataManager = new DataManager(LESSON_DATA);
+                this.ttsManager = new TTSManager();
+                this.recordManager = new RecordManager();
+                this.lessonHistoryManager = new LocalStorageManager("orateur_lesson_history");
+                this.dbManager = new IndexedDBManager("OrateurDB", "recordings");
+                this.uiController = new UIController();
+                this.currentLesson = null;
+                this.currentPhraseIndex = 0;
+                this.currentPhraseAudio = null;
+            }
+            async run() {
+                try {
+                    await this.dbManager.init();
+                    this.uiController.renderHistory(this.lessonHistoryManager.getHistory());
+                    this.uiController.bindEvents(this.getEventHandlers());
+                    this.updateUI();
+                } catch (error) { console.error("Application failed to start:", error); this.uiController.updateStatus("앱 초기화에 실패했습니다. 브라우저를 확인해주세요.", "error"); }
+            }
+            getEventHandlers() {
+                return {
+                    showPracticeView: () => this.uiController.showView('practice'),
+                    showRecordBoard: async () => { this.uiController.showView('record-board'); const records = await this.dbManager.getAllRecordings(); this.uiController.renderRecordBoard(records); },
+                    playHistoryRecord: (id) => this.handlePlayHistoryRecord(id),
+                    playHistoryTTS: (phrase) => this.ttsManager.speak(phrase),
+                    showCategoryView: () => this.uiController.renderCategories(this.dataManager.getCategories()),
+                    openModal: () => { this.uiController.renderCategories(this.dataManager.getCategories()); this.uiController.toggleModal(true); },
+                    selectCategory: (category) => this.uiController.renderLessons(this.dataManager.getLessonsForCategory(category), category),
+                    selectLesson: (category, title) => { this.startLesson(category, title); this.uiController.toggleModal(false); },
+                    selectHistory: (dataset) => { this.startLesson(dataset.category, dataset.title); if (this.uiController.isSidebarActive()) { this.uiController.toggleSidebar(); } },
+                    nextPhrase: () => this.changePhrase(1),
+                    prevPhrase: () => this.changePhrase(-1),
+                    playTTS: () => this.handleTTS(),
+                    toggleRecording: () => this.handleRecording(),
+                    playCurrentAudio: () => this.handlePlayCurrentAudio(),
+                    toggleSidebar: () => this.uiController.toggleSidebar(),
+                    closeModal: () => this.uiController.toggleModal(false),
+                };
+            }
+            startLesson(category, title) { this.currentLesson = { category, title, phrases: this.dataManager.getPhrases(category, title) }; this.currentPhraseIndex = 0; this.lessonHistoryManager.addHistory({ category, title }); this.uiController.renderHistory(this.lessonHistoryManager.getHistory()); this.setCurrentPhrase(); }
+            changePhrase(direction) { const newIndex = this.currentPhraseIndex + direction; if (this.currentLesson && newIndex >= 0 && newIndex < this.currentLesson.phrases.length) { this.currentPhraseIndex = newIndex; this.setCurrentPhrase(); } }
+            setCurrentPhrase() { this.currentPhraseAudio = null; this.updateUI(); }
+            async handleTTS() { if (this.currentLesson) { await this.ttsManager.speak(this.currentLesson.phrases[this.currentPhraseIndex]); } }
+            async handleRecording() {
+                if (this.recordManager.isRecording()) {
+                    const audioBlob = await this.recordManager.stopRecording();
+                    if (audioBlob) {
+                        this.currentPhraseAudio = audioBlob;
+                        await this.dbManager.addRecording({ lessonTitle: this.currentLesson.title, phrase: this.currentLesson.phrases[this.currentPhraseIndex], audioBlob: audioBlob, timestamp: new Date().toISOString(), });
+                        this.uiController.updateStatus("녹음이 저장되었습니다.");
+                    }
+                } else {
+                    try { this.currentPhraseAudio = null; await this.recordManager.startRecording(); this.uiController.updateStatus("녹음 중..."); } catch (error) { this.uiController.updateStatus("마이크를 사용할 수 없습니다.", "error"); }
+                }
+                this.updateUI();
+            }
+            handlePlayCurrentAudio() { if (this.currentPhraseAudio) { new Audio(URL.createObjectURL(this.currentPhraseAudio)).play(); } }
+            async handlePlayHistoryRecord(id) { try { const record = await this.dbManager.getRecording(id); if (record && record.audioBlob) { new Audio(URL.createObjectURL(record.audioBlob)).play(); } } catch (error) { console.error("Error playing recording:", error); this.uiController.updateStatus("녹음 재생에 실패했습니다.", "error"); } }
+            updateUI() { const phrase = this.currentLesson ? this.currentLesson.phrases[this.currentPhraseIndex] : "레슨을 선택해주세요."; const isLessonActive = !!this.currentLesson; const isRecording = this.recordManager.isRecording(); this.uiController.updatePhrase(phrase); this.uiController.updateButtonStates({ tts: isLessonActive && !isRecording, record: isLessonActive, playback: isLessonActive && !isRecording && !!this.currentPhraseAudio, }); this.uiController.updateRecordButton(isRecording); this.uiController.toggleNavigationVisibility(isLessonActive); if (isLessonActive) { this.uiController.updateNavigation(this.currentPhraseIndex, this.currentLesson.phrases.length); } }
+        }
+
+        class UIController {
+            constructor() {
+                const elementIds = ["practice-area", "record-board-area", "record-board-list", "sidebar", "hamburger", "lesson-modal", "modal-header", "modal-back-btn", "modal-title", "modal-body", "modal-close-btn", "current-phrase", "status-display", "tts-btn", "record-btn", "playback-btn", "phrase-nav-container", "prev-phrase-btn", "next-phrase-btn", "phrase-counter", "history-list", "show-practice-view-btn", "show-record-board-btn", "open-modal-btn"];
+                for (const id of elementIds) {
+                    const element = document.getElementById(id);
+                    if (!element) { throw new Error(`CRITICAL ERROR: UI Element with ID "${id}" not found in HTML.`); }
+                    const propName = id.replace(/-(\w)/g, (_, letter) => letter.toUpperCase());
+                    this[propName] = element;
+                }
+            }
+            bindEvents(handlers) {
+                this.showPracticeViewBtn.addEventListener("click", handlers.showPracticeView);
+                this.showRecordBoardBtn.addEventListener("click", handlers.showRecordBoard);
+                this.openModalBtn.addEventListener("click", handlers.openModal);
+                
+                this.recordBoardList.addEventListener("click", (event) => {
+                    const button = event.target.closest(".icon-btn");
+                    if (!button) return;
+                    const item = button.closest(".record-item");
+                    if (!item) return;
+                    const recordId = parseInt(item.dataset.id, 10);
+                    const phrase = item.dataset.phrase;
+                    if (button.classList.contains("play-tts-btn")) { handlers.playHistoryTTS(phrase); }
+                    else if (button.classList.contains("play-record-btn")) { handlers.playHistoryRecord(recordId); }
+                });
+                
+                this.hamburger.addEventListener("click", handlers.toggleSidebar);
+                this.modalCloseBtn.addEventListener("click", handlers.closeModal);
+                this.modalBackBtn.addEventListener("click", handlers.showCategoryView);
+                this.prevPhraseBtn.addEventListener("click", handlers.prevPhrase);
+                this.nextPhraseBtn.addEventListener("click", handlers.nextPhrase);
+                this.ttsBtn.addEventListener("click", handlers.playTTS);
+                this.recordBtn.addEventListener("click", handlers.toggleRecording);
+                this.playbackBtn.addEventListener("click", handlers.playCurrentAudio);
+                
+                document.querySelector(".main-content").addEventListener("click", () => { if (this.isSidebarActive()) { handlers.toggleSidebar(); } });
+                this.lessonModal.addEventListener("click", (event) => { if (event.target === this.lessonModal) { handlers.closeModal(); } });
+                
+                this.modalBody.addEventListener("click", (event) => {
+                    const button = event.target.closest(".btn");
+                    if (button) {
+                        const { type, category, title } = button.dataset;
+                        if (type === 'category') { handlers.selectCategory(category); }
+                        else if (type === 'lesson') { handlers.selectLesson(category, title); }
+                    }
+                });
+                
+                this.historyList.addEventListener("click", (event) => { const item = event.target.closest(".history-item"); if (item) { handlers.selectHistory(item.dataset); } });
+            }
+            showView(viewName) { this.practiceArea.classList.toggle("is-hidden", viewName !== 'practice'); this.recordBoardArea.classList.toggle("is-hidden", viewName !== 'record-board'); }
+            renderRecordBoard(records) { this.recordBoardList.innerHTML = records.map(record => `<li class="record-item" data-id="${record.id}" data-phrase="${record.phrase}"><div class="record-info"><span class="phrase">"${record.phrase}"</span><span class="timestamp">${new Date(record.timestamp).toLocaleString("ko-KR")}</span></div><div class="record-item-controls"><button class="icon-btn play-tts-btn" title="원문 듣기"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" height="24" width="24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button><button class="icon-btn play-record-btn" title="내 녹음 듣기"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" height="24" width="24"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg></button></div></li>`).join(""); }
+            updatePhrase(phrase) { this.currentPhrase.textContent = phrase; }
+            updateStatus(text, type = "info") { this.statusDisplay.textContent = text; this.statusDisplay.style.color = type === "error" ? "var(--danger-color)" : "var(--text-light-color)"; }
+            updateButtonStates({ tts, record, playback }) { this.ttsBtn.disabled = !tts; this.recordBtn.disabled = !record; this.playbackBtn.classList.toggle("is-hidden", !playback); }
+            updateRecordButton(isRecording) { this.recordBtn.innerHTML = isRecording ? '<div style="display:flex;align-items:center;gap:.5rem;"><div style="width:10px;height:10px;background-color:white;border-radius:50%;animation:pulse 1.5s infinite;"></div>Arrêter</div>' : 'Enregistrer'; this.recordBtn.style.backgroundColor = isRecording ? "var(--danger-color)" : ""; if (!document.querySelector("style#pulse-animation")) { const style = document.createElement('style'); style.id = 'pulse-animation'; style.innerHTML = `@keyframes pulse{0%{opacity:1}50%{opacity:.2}100%{opacity:1}}`; document.head.appendChild(style); } }
+            updateNavigation(index, total) { this.phraseCounter.textContent = `${index + 1} / ${total}`; this.prevPhraseBtn.disabled = index === 0; this.nextPhraseBtn.disabled = index === total - 1; }
+            toggleNavigationVisibility(show) { this.phraseNavContainer.classList.toggle("is-hidden", !show); }
+            renderHistory(history) { this.historyList.innerHTML = history.map(item => `<li class="history-item" data-category="${item.category}" data-title="${item.title}">${item.title}</li>`).join(""); }
+            renderCategories(categories) { this.modalTitle.textContent = "카테고리 선택"; this.modalBackBtn.classList.add("is-hidden"); this.modalBody.innerHTML = categories.map(category => `<button class="btn btn-modal-item" data-type="category" data-category="${category}">${category}</button>`).join(""); }
+            renderLessons(lessons, categoryName) { this.modalTitle.textContent = categoryName; this.modalBackBtn.classList.remove("is-hidden"); this.modalBody.innerHTML = lessons.map(lesson => `<button class="btn btn-modal-item" data-type="lesson" data-category="${categoryName}" data-title="${lesson.title}">${lesson.title}</button>`).join(""); }
+            toggleModal(show) { this.lessonModal.classList.toggle("is-hidden", !show); }
+            toggleSidebar() { this.sidebar.classList.toggle("is-active"); }
+            isSidebarActive() { return this.sidebar.classList.contains("is-active"); }
+        }
+
+        class RecordManager{constructor(){this._isRecording=!1,this.mediaRecorder=null,this.audioChunks=[]}isRecording(){return this._isRecording}async startRecording(){const t=await navigator.mediaDevices.getUserMedia({audio:!0});this._isRecording=!0,this.mediaRecorder=new MediaRecorder(t,{mimeType:"audio/webm"}),this.mediaRecorder.ondataavailable=t=>this.audioChunks.push(t.data),this.mediaRecorder.start()}stopRecording(){return new Promise(t=>{this.mediaRecorder.onstop=()=>{const e=new Blob(this.audioChunks,{type:"audio/webm"});this.audioChunks=[],this._isRecording=!1,this.mediaRecorder.stream.getTracks().forEach(t=>t.stop()),t(e)},"recording"===this.mediaRecorder.state&&this.mediaRecorder.stop()})}}
+        class DataManager{constructor(t){this._allData=t}getCategories(){return this._allData.map(t=>t.category)}getLessonsForCategory(t){const e=this._allData.find(e=>e.category===t);return e?e.lessons:[]}getPhrases(t,e){const s=this._allData.find(s=>s.category===t)?.lessons.find(t=>t.title===e);return s?s.phrases:[]}}
+        class LocalStorageManager{constructor(t){this.storageKey=t}getHistory(){return JSON.parse(localStorage.getItem(this.storageKey))||[]}addHistory(t){let e=this.getHistory().filter(e=>e.title!==t.title);e.unshift(t),e.length>15&&e.pop(),localStorage.setItem(this.storageKey,JSON.stringify(e))}}
+        class TTSManager{constructor(){this.synth=window.speechSynthesis;this.utterance=new SpeechSynthesisUtterance;this.utterance.lang="fr-FR";this.utterance.rate=.9}speak(t){return new Promise(e=>{this.utterance.text=t,this.utterance.onend=e,this.synth.cancel(),this.synth.speak(this.utterance)})}}
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            new App().run();
+        });
+    </script>
+</body>
+</html>
